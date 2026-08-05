@@ -1,0 +1,7 @@
+node_modules/
+.env
+*.log
+status_message_id.txt
+alert_message_id.txt
+discord_to_wow.txt
+*.bak*

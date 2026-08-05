@@ -1,0 +1,21 @@
+{
+  "name": "mangos-statusbot",
+  "version": "2.0.0",
+  "description": "Discord status embed and game-to-Discord chat bridge for mangos-family WoW servers",
+  "main": "index.js",
+  "type": "commonjs",
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.23.0",
+    "node-fetch": "^2.7.0"
+  },
+  "license": "MIT",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

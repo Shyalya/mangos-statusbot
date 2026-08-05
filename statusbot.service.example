@@ -1,0 +1,15 @@
+[Unit]
+Description=Discord Statusbot (Status-Embed + WoW->Discord Chatbridge)
+After=network-online.target mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=CHANGEME
+WorkingDirectory=/home/CHANGEME/statusbot
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
