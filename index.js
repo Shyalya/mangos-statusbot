@@ -5,8 +5,6 @@ const fs = require('fs');
 const mysql = require('mysql2/promise');
 const fetch = require('node-fetch');
 const net = require("net");
-require("./wowbridge.js");
-require("./chat_watcher.js");
 const classIcons = require('./classIcons');
 const zones = require('./zones');
 const CLASS_BY_ID = { 1: 'WARRIOR', 2: 'PALADIN', 3: 'HUNTER', 4: 'ROGUE', 5: 'PRIEST', 6: 'DEATHKNIGHT', 7: 'SHAMAN', 8: 'MAGE', 9: 'WARLOCK', 11: 'DRUID' };
@@ -32,12 +30,23 @@ const WORLD_PORT = Number(process.env.WORLD_PORT || 8085);
 // kein Spieler und gehoert nicht in Zaehlung und Liste.
 const BRIDGE_CHARACTER = process.env.BRIDGE_CHARACTER || "Discord";
 
-for (const [name, wert] of Object.entries({ DISCORD_TOKEN: TOKEN, STATUS_CHANNEL_ID: CHANNEL_ID, CHAT_CHANNEL_ID })) {
-    if (!wert) {
-        console.error(`Fehlende Angabe in .env: ${name}`);
-        process.exit(1);
-    }
+const PFLICHTFELDER = {
+    DISCORD_TOKEN: TOKEN,
+    STATUS_CHANNEL_ID: CHANNEL_ID,
+    CHAT_CHANNEL_ID: CHAT_CHANNEL_ID,
+    CHAT_LOG_PATH: process.env.CHAT_LOG_PATH
+};
+
+const fehlend = Object.entries(PFLICHTFELDER).filter(([, wert]) => !wert).map(([name]) => name);
+if (fehlend.length) {
+    console.error("Fehlende Angaben in .env: " + fehlend.join(", "));
+    console.error("Vorlage siehe .env.example");
+    process.exit(1);
 }
+
+// Erst jetzt einbinden - beide Module lesen ihre Einstellungen beim Laden.
+require("./wowbridge.js");
+require("./chat_watcher.js");
 const STATUS_FILE = "status_message_id.txt";
 const ALERT_FILE = "alert_message_id.txt";
 const CHECK_INTERVAL_MS = 20 * 1000;
