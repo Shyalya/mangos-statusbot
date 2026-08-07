@@ -122,7 +122,7 @@ async function getPlayerCount() {
 
         return rows[0].count;
     } catch (err) {
-        console.log("Fehler beim Abrufen der Spieleranzahl:", err);
+        console.log("Failed to fetch the player count:", err);
         return 0;
     }
 }
@@ -147,7 +147,7 @@ async function getPlayerList() {
         await conn.end();
         return rows;
     } catch (err) {
-        console.log("Fehler beim Abrufen der Spielerliste:", err);
+        console.log("Failed to fetch the player list:", err);
         return [];
     }
 }
@@ -174,7 +174,7 @@ async function getUptime() {
         const minutes = Math.floor((diffSec % 3600) / 60);
         return days > 0 ? `${days}d ${hours}h ${minutes}m` : `${hours}h ${minutes}m`;
     } catch (err) {
-        console.log("Fehler beim Abrufen der Uptime:", err);
+        console.log("Failed to fetch the uptime:", err);
         return null;
     }
 }
@@ -201,9 +201,9 @@ async function getStatus() {
             isOnline: false,
             embed: {
                 color: 0xff0000,
-                title: "🔴 Server Offline",
+                title: "🔴 Server offline",
                 fields: [
-                    { name: "Status", value: "Server nicht erreichbar (TCP-Check)", inline: false }
+                    { name: "Status", value: "Server unreachable (TCP check)", inline: false }
                 ]
             }
         };
@@ -213,7 +213,7 @@ async function getStatus() {
     const uptime = await getUptime();
     const playerList = await getPlayerList();
 
-    let playerText = "Keine Spieler online.";
+    let playerText = "No players online.";
     if (playerList.length > 0) {
         const lines = playerList.map(p => {
             const cname = CLASS_BY_ID[p.class];
@@ -237,11 +237,11 @@ async function getStatus() {
         isOnline: true,
         embed: {
             color: 0x00ff00,
-            title: "🟢 Worldserver Online",
+            title: "🟢 World server online",
             fields: [
-                { name: "👥 Spieler Online", value: `${players}`, inline: true },
-                { name: "⏱ Uptime", value: uptime || "Unbekannt", inline: true },
-                { name: "📜 Spielerliste", value: playerText }
+                { name: "👥 Players online", value: `${players}`, inline: true },
+                { name: "⏱ Uptime", value: uptime || "unknown", inline: true },
+                { name: "📜 Player list", value: playerText }
             ]
         }
     };
@@ -271,17 +271,17 @@ async function sendAlert(channel, text) {
 async function updateStatusMessage() {
     const channel = await client.channels.fetch(CHANNEL_ID);
     if (!channel) {
-    console.log("❌ Fehler: CHANNEL_ID ungültig oder Bot hat keine Rechte!");
+    console.log("❌ Error: invalid CHANNEL_ID, or the bot lacks permission.");
     return;
     }
     const status = await getStatus();
 
     if (lastOnlineState === true && status.isOnline === false) {
-        await sendAlert(channel, "⚠️ **Server Crash erkannt!**");
+        await sendAlert(channel, "⚠️ **Server crash detected.**");
     }
 
     if (lastOnlineState === false && status.isOnline === true) {
-        await sendAlert(channel, "✅ **Server ist wieder online!**");
+        await sendAlert(channel, "✅ **Server is back online.**");
     }
 
     lastOnlineState = status.isOnline;
@@ -314,13 +314,13 @@ async function updateStatusMessage() {
 // =========================
 
 client.once('ready', async () => {
-    console.log(`Status-Bot online als ${client.user.tag}`);
+    console.log(`Status bot online as ${client.user.tag}`);
 
     try {
         global.discordChannel = await client.channels.fetch(CHAT_CHANNEL_ID);
-        console.log("Discord-Chat-Bridge aktiv.");
+        console.log("Discord chat bridge active.");
     } catch (err) {
-        console.log("Fehler: Konnte Discord-Channel nicht laden:", err);
+        console.log("Error: could not load the Discord channel:", err);
     }
 
     if (fs.existsSync(STATUS_FILE)) {

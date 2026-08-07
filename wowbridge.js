@@ -97,7 +97,7 @@ function buildChatEmbed(data) {
             {
                 color: embedColor,
                 title: title,
-                description: channelEntry.name + ': ' + (msg || '_(leer)_'),
+                description: channelEntry.name + ': ' + (msg || '_(empty)_'),
                 fields,
                 timestamp: new Date().toISOString()
             }
@@ -186,7 +186,7 @@ app.post("/discordToWow", (req, res) => {
 // -----------------------------
 const BRIDGE_PORT = Number(process.env.BRIDGE_PORT || 3001);
 app.listen(BRIDGE_PORT, "127.0.0.1", () => {
-    console.log(`WoW-Bridge API läuft auf Port ${BRIDGE_PORT}`);
+    console.log(`WoW bridge API listening on port ${BRIDGE_PORT}`);
 });
 
 // Periodically try to flush queued messages if the bot becomes available
