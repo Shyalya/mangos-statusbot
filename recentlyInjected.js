@@ -1,8 +1,8 @@
-// Wird von wowbridge.js (Discord -> WoW) UND chat_watcher.js (WoW -> Discord)
-// im selben Node-Prozess geteilt (CommonJS-Modul-Cache), damit Nachrichten,
-// die wir selbst gerade ins Spiel getippt haben, nicht als "neue" WoW-Chat-
-// Nachricht zurueck nach Discord gebrueckt werden (Echo-Schleife).
-const recent = new Map(); // normalisierter Text -> Zeitstempel
+// Shared between wowbridge.js (Discord -> game) and chat_watcher.js
+// (game -> Discord) within the same Node process, through the CommonJS
+// module cache. Without it, a message we just typed into the game comes
+// straight back to Discord as if it were new - an echo loop.
+const recent = new Map(); // normalised text -> timestamp
 const TTL_MS = 15000;
 
 function normalize(text) {
@@ -17,7 +17,7 @@ function wasRecentlyInjected(text) {
   const key = normalize(text);
   const ts = recent.get(key);
   if (!ts) return false;
-  recent.delete(key); // einmal konsumieren, damit spaetere echte Wiederholungen nicht blockiert werden
+  recent.delete(key); // consume once, so a later genuine repeat is not swallowed
   return Date.now() - ts <= TTL_MS;
 }
 

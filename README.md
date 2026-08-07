@@ -62,7 +62,6 @@ business in Discord.
 
 - Give the bot's MySQL user read-only access. It never needs to write.
 - The bridge listens on `127.0.0.1` only.
-- Comments in the source are in German.
 
 ## Licence
 

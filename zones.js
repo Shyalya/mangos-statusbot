@@ -1,5 +1,5 @@
-// Zone-ID -> Name (Vanilla 1.12 / Turtle). AreaTable-IDs der Top-Level-Zonen.
-// Unbekannte IDs fallen im Bot auf "Zone <id>" zurueck.
+// Zone id -> name (vanilla 1.12 / Turtle), AreaTable ids of the top level
+// zones. Unknown ids fall back to "Zone <id>" in the bot.
 module.exports = {
   0: "—",
   1: "Dun Morogh",
@@ -48,7 +48,7 @@ module.exports = {
   1638: "Thunder Bluff",
   1657: "Darnassus",
   1497: "Undercity",
-  // Dungeons / Instanzen (haeufige)
+  // Dungeons and instances (the common ones)
   717: "The Stockade",
   718: "Wailing Caverns",
   719: "Blackfathom Deeps",

@@ -4,7 +4,7 @@ const fetch = require('node-fetch');
 const mysql = require('mysql2/promise');
 const { wasRecentlyInjected } = require('./recentlyInjected');
 
-// Pfad zur chat.log des Kerns - liegt bei mangos unter build/src/logs/.
+// Path to the core's chat.log - on mangos it lives in build/src/logs/.
 const LOG_PATH = process.env.CHAT_LOG_PATH;
 const POLL_MS = Number(process.env.CHAT_POLL_MS || 1000);
 const BRIDGE_PORT = Number(process.env.BRIDGE_PORT || 3001);
@@ -97,9 +97,9 @@ async function sendToBridge(line) {
                 classId = senderParts[1] || '';
             }
 
-            // Nachrichten des Bruecken-Charakters "Discord" stammen immer aus
-            // Discord selbst (via WoWChat ins Spiel gesprochen) - nicht zurueck
-            // nach Discord bruecken, sonst gibt es jede Nachricht doppelt.
+            // Anything said by the bridge character came from Discord in the
+            // first place, spoken into the game by WoWChat. Do not bridge it
+            // back or every message shows up twice.
             if (sender.toLowerCase() === BRIDGE_CHARACTER) {
                 log(`skip bridge character echo: ${msg}`);
                 return;
@@ -112,10 +112,10 @@ async function sendToBridge(line) {
 
             channel = channelTag;
             if (/^Chan/i.test(channelTag)) {
-                // Von den Custom-Kanaelen NUR "World" bruecken. Der Kanalname
-                // steht nach dem letzten ":", z.B. "Chan|GM:World" -> "World",
-                // "Chan|GM:Lft" -> "Lft". Alles ausser World (Addon-Sync wie
-                // "ATW:1060:v", zonen-General usw.) wird uebersprungen.
+                // Of the custom channels bridge ONLY "World". The channel name
+                // follows the last ":", e.g. "Chan|GM:World" -> "World",
+                // "Chan|GM:Lft" -> "Lft". Everything else is skipped: addon
+                // sync like "ATW:1060:v", zone general, and so on.
                 const chanName = channelTag.split(':').pop().trim();
                 if (!/^World$/i.test(chanName)) {
                     log(`skip addon/custom channel "${channelTag}": ${remainder}`);
@@ -132,19 +132,18 @@ async function sendToBridge(line) {
             } else if (/Emote/i.test(channelTag)) {
                 event = 'CHAT_MSG_EMOTE';
             } else {
-                // Whitelist: nur oeffentliche Kanaele (Say/Yell/Guild/World/Emote)
-                // bruecken. Party/Group/Raid/Emote/Lft usw. sind interne
-                // Koordination (v.a. Bot-Gruppen) -> nicht nach Discord.
+                // Allow list: bridge public channels only - say, yell, guild,
+                // world, emote. Party, raid, lft and friends are internal
+                // coordination, mostly between bots, and stay out of Discord.
                 log(`skip non-public channel "${channelTag}": ${remainder}`);
                 return;
             }
-            // mangos markiert GM-gesendete Nachrichten im Kanal-Tag mit "|GM",
-            // z.B. "[Say|GM]" - direkt nutzbar, keine extra DB-Abfrage noetig.
+            // mangos marks GM messages in the channel tag with "|GM", e.g.
+            // "[Say|GM]" - usable as is, no extra database lookup needed.
             const isGM = /\|GM\b/i.test(channelTag);
 
-            // Nachricht, die wir selbst gerade per Discord->WoW injiziert
-            // haben, nicht als "neue" WoW-Nachricht zurueck nach Discord
-            // bruecken - sonst gibt's eine Echo-Schleife.
+            // A message we just injected ourselves through Discord -> game
+            // must not be bridged back as a "new" game message, or it loops.
             if (wasRecentlyInjected(msg)) {
                 log(`skip echo of self-injected message: ${msg}`);
                 return;

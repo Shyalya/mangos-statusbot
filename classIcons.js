@@ -24,7 +24,7 @@ if (process.env.CLASS_ICONS) {
     try {
         icons = Object.assign(icons, JSON.parse(process.env.CLASS_ICONS));
     } catch (e) {
-        console.error("CLASS_ICONS ist kein gueltiges JSON, Symbole werden weggelassen:", e.message);
+        console.error("CLASS_ICONS is not valid JSON, icons will be omitted:", e.message);
     }
 }
 

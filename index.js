@@ -17,7 +17,7 @@ const TOKEN = process.env.DISCORD_TOKEN;
 const CHANNEL_ID = process.env.STATUS_CHANNEL_ID;
 const CHAT_CHANNEL_ID = process.env.CHAT_CHANNEL_ID;
 
-// Datenbank und Server, alles ueber die Umgebung einstellbar.
+// Database and server, all configurable through the environment.
 const DB_HOST = process.env.DB_HOST || "127.0.0.1";
 const DB_CHARACTERS = process.env.DB_CHARACTERS || "characters";
 const DB_LOGON = process.env.DB_LOGON || "realmd";
@@ -26,8 +26,8 @@ const REALMD_PORT = Number(process.env.REALMD_PORT || 3724);
 const WORLD_HOST = process.env.WORLD_HOST || "127.0.0.1";
 const WORLD_PORT = Number(process.env.WORLD_PORT || 8085);
 
-// Der Brueckencharakter spricht Discord-Nachrichten im Spiel aus. Er ist
-// kein Spieler und gehoert nicht in Zaehlung und Liste.
+// The bridge character speaks Discord messages out in game. It is not a
+// player and does not belong in the count or the list.
 const BRIDGE_CHARACTER = process.env.BRIDGE_CHARACTER || "Discord";
 
 const PFLICHTFELDER = {
@@ -44,7 +44,7 @@ if (fehlend.length) {
     process.exit(1);
 }
 
-// Erst jetzt einbinden - beide Module lesen ihre Einstellungen beim Laden.
+// Require only now - both modules read their settings on load.
 require("./wowbridge.js");
 require("./chat_watcher.js");
 const STATUS_FILE = "status_message_id.txt";
@@ -70,7 +70,7 @@ let onlineSince = null;
 global.discordChannel = null;
 
 // =========================
-// TCP CHECK (ultraschnell)
+// TCP CHECK (very fast)
 // =========================
 
 function checkServer(host, port, timeout = 500) {
@@ -153,12 +153,12 @@ async function getPlayerList() {
 }
 
 // =========================
-// UPTIME MODULE (im Bot selbst getrackt, unabhaengig vom crash.log-Format)
+// UPTIME MODULE (read from the database, independent of any log format)
 // =========================
 
-// Liest die echte Server-Startzeit aus der uptime-Tabelle der Logon-
-// Datenbank (robuster als
-// bot-seitiges Tracking, das bei jedem kurzen Blip zuruecksetzt).
+// Reads the real server start time from the uptime table of the logon
+// database. More robust than tracking it in the bot, which resets on
+// every short blip.
 async function getUptime() {
     try {
         const conn = await mysql.createConnection({
@@ -180,7 +180,7 @@ async function getUptime() {
 }
 
 // =========================
-// STATUS ERMITTELN
+// DETERMINE STATUS
 // =========================
 
 async function getStatus() {
@@ -221,8 +221,8 @@ async function getStatus() {
             const zoneName = zones[p.zone] || `Zone ${p.zone}`;
             return `${icon}**${p.name}** (Lvl ${p.level}) — ${zoneName}`;
         });
-        // Discord-Embed-Feld: max 1024 Zeichen. So viele Zeilen wie passen,
-        // Rest als "+N weitere" andeuten.
+        // A Discord embed field holds at most 1024 characters. Fit as many
+        // lines as possible, then hint at the rest with "+N more".
         let out = "", shown = 0;
         for (const line of lines) {
             if (out.length + line.length + 1 > 950) break;
@@ -252,16 +252,15 @@ async function getStatus() {
 // STATUS MESSAGE UPDATER
 // =========================
 
-// Schickt eine Crash/Online-Meldung und loescht dabei die vorherige, damit
-// der Kanal nicht mit alten Meldungen vollmuellt - es steht immer nur die
-// aktuellste da.
+// Sends a crash/online notice and deletes the previous one, so the channel
+// does not fill up with stale notices - only the most recent one stands.
 async function sendAlert(channel, text) {
     if (lastAlertMessageId) {
         try {
             const oldMsg = await channel.messages.fetch(lastAlertMessageId);
             await oldMsg.delete();
         } catch (e) {
-            // Nachricht war schon weg (z.B. manuell geloescht) - kein Problem.
+            // Message was already gone (deleted by hand, say) - no problem.
         }
     }
     const newMsg = await channel.send(text);
@@ -306,9 +305,9 @@ async function updateStatusMessage() {
 // =========================
 // DISCORD → WoW CHAT BRIDGE
 // =========================
-// Seit dem Linux-Umzug uebernimmt WoWChat (eigener Dienst, headless) die
-// Richtung Discord -> WoW direkt - kein AHK-Injector/WoW-Client mehr noetig.
-// Dieser Bot macht nur noch Status + WoW -> Discord (via chat_watcher).
+// WoWChat (a separate headless service) handles the Discord -> game
+// direction. This bot only does status plus game -> Discord, through
+// chat_watcher.
 
 // =========================
 // BOT START
