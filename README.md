@@ -4,9 +4,11 @@ A Discord bot for vanilla WoW servers running a mangos-family core
 (cmangos, mangos-zero, Turtle WoW / tortoise-wow). It does two things:
 
 - **Status embed** — one self-updating message showing whether realmd and the
-  world server answer on TCP, how long the server has been up, how many
-  characters are online, and who they are with class icon, level and zone.
-  Posts a notice when the server drops and another when it comes back.
+  world server answer on TCP, how long the server has been up, who is online
+  with class icon, level and zone, and a notice when the server drops or comes
+  back. If you run bots, they are counted separately and real players are
+  listed first, whatever their level — set `BOT_ACCOUNT_PREFIX` to the account
+  prefix your bots use.
 - **Chat bridge (game to Discord)** — tails the core's `chat.log` and mirrors
   public channels into a Discord channel as colour-coded embeds.
 
@@ -61,6 +63,9 @@ business in Discord.
 ## Notes
 
 - Give the bot's MySQL user read-only access. It never needs to write.
+- A Discord outage will not take the bot down: login retries with a growing
+  delay, and a status message is only replaced when Discord says it is really
+  gone. Without that, an hour of 503s leaves a trail of frozen embeds behind.
 - The bridge listens on `127.0.0.1` only.
 
 ## Licence
