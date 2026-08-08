@@ -30,6 +30,10 @@ const WORLD_PORT = Number(process.env.WORLD_PORT || 8085);
 // player and does not belong in the count or the list.
 const BRIDGE_CHARACTER = process.env.BRIDGE_CHARACTER || "Discord";
 
+// Account name prefix that marks a bot, so real players can be listed
+// first. Leave empty to treat every account as a player.
+const BOT_ACCOUNT_PREFIX = process.env.BOT_ACCOUNT_PREFIX || "";
+
 const PFLICHTFELDER = {
     DISCORD_TOKEN: TOKEN,
     STATUS_CHANNEL_ID: CHANNEL_ID,
@@ -136,13 +140,20 @@ async function getPlayerList() {
             database: DB_CHARACTERS
         });
 
+        // Real players first, whatever their level. Bots sit on their own
+        // accounts, recognised by BOT_ACCOUNT_PREFIX; leave that empty and
+        // everyone is treated as a player.
         const [rows] = await conn.execute(`
-            SELECT name, level, class, zone
-            FROM characters
-            WHERE online = 1 AND name != ?
-            ORDER BY level DESC, name ASC
+            SELECT c.name, c.level, c.class, c.zone,
+                   CASE WHEN ? = '' THEN 0
+                        WHEN a.username LIKE CONCAT(?, '%') THEN 1
+                        ELSE 0 END AS isBot
+            FROM characters c
+            JOIN ${DB_LOGON}.account a ON a.id = c.account
+            WHERE c.online = 1 AND c.name != ?
+            ORDER BY isBot ASC, c.level DESC, c.name ASC
             LIMIT 20
-        `, [BRIDGE_CHARACTER]);
+        `, [BOT_ACCOUNT_PREFIX, BOT_ACCOUNT_PREFIX, BRIDGE_CHARACTER]);
 
         await conn.end();
         return rows;
@@ -229,7 +240,6 @@ async function getStatus() {
             out += (out ? "\n" : "") + line;
             shown++;
         }
-        if (shown < lines.length) out += `\n… +${lines.length - shown} more`;
         playerText = out;
     }
 
