@@ -119,15 +119,23 @@ async function getPlayerCount() {
             database: DB_CHARACTERS
         });
 
-        const [rows] = await conn.execute(
-            "SELECT COUNT(*) AS count FROM characters WHERE online = 1 AND name != ?",
-            [BRIDGE_CHARACTER]);
+        // Split real players from bots: on a server running a thousand of them
+        // a single number says nothing about who is actually around. Without a
+        // BOT_ACCOUNT_PREFIX everyone counts as a player.
+        const [rows] = await conn.execute(`
+            SELECT SUM(CASE WHEN ? <> '' AND a.username LIKE CONCAT(?, '%') THEN 0 ELSE 1 END) AS players,
+                   SUM(CASE WHEN ? <> '' AND a.username LIKE CONCAT(?, '%') THEN 1 ELSE 0 END) AS bots
+            FROM characters c
+            JOIN ${DB_LOGON}.account a ON a.id = c.account
+            WHERE c.online = 1 AND c.name != ?
+        `, [BOT_ACCOUNT_PREFIX, BOT_ACCOUNT_PREFIX,
+            BOT_ACCOUNT_PREFIX, BOT_ACCOUNT_PREFIX, BRIDGE_CHARACTER]);
         await conn.end();
 
-        return rows[0].count;
+        return { players: Number(rows[0].players || 0), bots: Number(rows[0].bots || 0) };
     } catch (err) {
         console.log("Failed to fetch the player count:", err);
-        return 0;
+        return { players: 0, bots: 0 };
     }
 }
 
@@ -249,7 +257,8 @@ async function getStatus() {
             color: 0x00ff00,
             title: "🟢 World server online",
             fields: [
-                { name: "👥 Players online", value: `${players}`, inline: true },
+                { name: "👥 Players online", value: `${players.players}`, inline: true },
+                ...(players.bots ? [{ name: "🤖 Bots", value: `${players.bots}`, inline: true }] : []),
                 { name: "⏱ Uptime", value: uptime || "unknown", inline: true },
                 { name: "📜 Player list", value: playerText }
             ]
