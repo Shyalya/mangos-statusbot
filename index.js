@@ -229,7 +229,7 @@ async function getStatus() {
             out += (out ? "\n" : "") + line;
             shown++;
         }
-        if (shown < lines.length) out += `\n… +${lines.length - shown} weitere`;
+        if (shown < lines.length) out += `\n… +${lines.length - shown} more`;
         playerText = out;
     }
 
@@ -291,6 +291,15 @@ async function updateStatusMessage() {
             const msg = await channel.messages.fetch(lastStatusMessageId);
             await msg.edit({ embeds: [status.embed] });
         } catch (e) {
+            // Only post a replacement when the old message is genuinely gone.
+            // Discord code 10008 is "Unknown Message". Anything else - a 503,
+            // a rate limit, a network blip - is transient: keep the id and try
+            // again next tick. Posting on every error leaves orphaned embeds
+            // behind that nothing updates any more.
+            if (e?.code !== 10008) {
+                console.log("Could not edit the status message, will retry:", e?.message || e);
+                return;
+            }
             const newMsg = await channel.send({ embeds: [status.embed] });
             lastStatusMessageId = newMsg.id;
             fs.writeFileSync(STATUS_FILE, lastStatusMessageId);
@@ -334,4 +343,20 @@ client.once('ready', async () => {
     setInterval(updateStatusMessage, CHECK_INTERVAL_MS);
 });
 
-client.login(TOKEN);
+// Discord answers /gateway/bot with 503 often enough that dying on it is not
+// acceptable: systemd restarts the process, and every run that cannot reach
+// its old status message posts a new one. Retry with a growing delay instead.
+async function login() {
+    for (let attempt = 1; ; attempt++) {
+        try {
+            await client.login(TOKEN);
+            return;
+        } catch (e) {
+            const wait = Math.min(60, 5 * attempt);
+            console.log(`Login failed (attempt ${attempt}): ${e?.message || e} - retrying in ${wait}s`);
+            await new Promise(r => setTimeout(r, wait * 1000));
+        }
+    }
+}
+
+login();
